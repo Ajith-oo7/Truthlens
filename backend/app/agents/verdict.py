@@ -72,7 +72,9 @@ def run_verdict(
         reasoning=reasoning,
     )
     parsed = llm.generate_json(
-        "Issue a grounded verdict. Use only provided evidence IDs and source URLs. If evidence is thin, UNVERIFIABLE.",
+        "Issue a grounded verdict using only provided evidence IDs and URLs. "
+        "If on-topic sources support the claim, return TRUE. If they contradict it, return FALSE. "
+        "UNVERIFIABLE only when the ledger does not actually address the claim.",
         f"CLAIM={claim.claim} EVIDENCE={[e.model_dump() for e in evidence]} SCORES={[s.model_dump() for s in scores]} "
         f"REASONING={[s.model_dump() for s in reasoning]} SUGGESTED={fallback.model_dump()}",
         fallback.model_dump(),
@@ -80,6 +82,13 @@ def run_verdict(
     try:
         result = VerdictResult.model_validate({**fallback.model_dump(), **parsed, "reasoning": reasoning, "sources": sources})
     except Exception:
+        result = fallback
+
+    if (
+        result.verdict == VerdictLabel.UNVERIFIABLE
+        and fallback.verdict != VerdictLabel.UNVERIFIABLE
+        and len(evidence) >= settings.min_evidence_count
+    ):
         result = fallback
 
     if any(src.url and src.url not in ledger_urls for src in result.sources) and ledger_urls:

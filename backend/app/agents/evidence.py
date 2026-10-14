@@ -5,6 +5,7 @@ from app.retrieval.hybrid import hybrid_search
 from app.services.corpus import is_relevant_text
 from app.tools.evidence import search_web
 from app.tools.factcheck import search_fact_checks
+from app.tools.stance import assign_stances
 
 
 def _on_topic(query: str, item: EvidenceItem) -> bool:
@@ -25,6 +26,7 @@ def run_evidence_retrieval(claim: ExtractedClaim) -> tuple[EvidencePackage, dict
             dedup[key] = item
     ranked = sorted(dedup.values(), key=lambda i: i.score, reverse=True)
     normalized = [item.model_copy(update={"id": f"E-{idx:03d}"}) for idx, item in enumerate(ranked, start=1)]
+    normalized = assign_stances(query, normalized)
     layers["factcheck"] = fact_hits
     layers["web"] = web_hits
     layers["fused"] = fused

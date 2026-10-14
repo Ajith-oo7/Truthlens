@@ -21,7 +21,7 @@ Docker Compose covers Neo4j, Qdrant, Elasticsearch, and Chroma locally.
 | Variable | Where to get it | Fallback if missing |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | Deterministic mock investigation (sample claim still works) |
-| `GEMINI_MODEL` | Default `gemini-2.5-flash` | Uses default |
+| `GEMINI_MODEL` | Default `gemini-3.8-flash` | Tries 3.8 → 3.6 → 3.5-lite if the named model 404s |
 | `GEMINI_EMBEDDING_MODEL` | Default `gemini-embedding-001` | Hash embeddings for local seed corpus |
 
 ---
