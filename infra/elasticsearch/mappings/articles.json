@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "claim_analyzer": {
+          "type": "standard"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": { "type": "text", "analyzer": "claim_analyzer" },
+      "body": { "type": "text", "analyzer": "claim_analyzer" },
+      "domain": { "type": "keyword" },
+      "url": { "type": "keyword" },
+      "tier": { "type": "keyword" },
+      "topic": { "type": "keyword" },
+      "published_at": { "type": "date" },
+      "stance": { "type": "keyword" }
+    }
+  }
+}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruthLens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --void: #0b0f17;
+      --surface: #0f131c;
+      --panel: #111827;
+      --high: #1e293b;
+      --cyan: #06b6d4;
+      --bright: #4cd7f6;
+      --indigo: #6366f1;
+      --true: #10b981;
+      --false: #ef4444;
+      --amber: #f59e0b;
+      --purple: #8b5cf6;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: rgba(255,255,255,.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--void); color: var(--text); font-family: Inter, sans-serif; }
+    button, input, textarea { font: inherit; }
+    .mono { font-family: "JetBrains Mono", monospace; }
+    header.app {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 28px; background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    header.app strong { letter-spacing: .22em; }
+    header.app strong span { color: var(--cyan); }
+    nav a { color: var(--muted); text-decoration: none; margin-right: 16px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; }
+    nav a.active { color: var(--cyan); }
+    .screen { display: none; min-height: calc(100vh - 56px); }
+    .screen.active { display: block; }
+    .splash { display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; background:
+      radial-gradient(circle at 50% 40%, rgba(6,182,212,.12), transparent 40%), var(--void); }
+    .lens { width: 140px; height: 140px; margin: 0 auto 24px; border-radius: 50%;
+      border: 2px solid rgba(6,182,212,.6); box-shadow: 0 0 24px rgba(6,182,212,.35);
+      display: grid; place-items: center; font-size: 42px; color: var(--cyan); }
+    .splash h1 { letter-spacing: .28em; font-size: 40px; margin: 0; }
+    .splash p { color: var(--muted); letter-spacing: .32em; font-size: 12px; }
+    .ok { color: var(--true); letter-spacing: .12em; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+    .sec { color: var(--cyan); font-size: 12px; letter-spacing: .08em; margin-bottom: 8px; }
+    textarea { width: 100%; min-height: 140px; background: var(--void); color: var(--text);
+      border: 1px solid #334155; border-radius: 4px; padding: 14px; }
+    textarea:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(6,182,212,.25); }
+    .row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    .btn { background: var(--cyan); color: var(--void); border: 0; border-radius: 4px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+    .btn.ghost { background: transparent; color: var(--indigo); border: 1px solid rgba(99,102,241,.4); }
+    .step { display: flex; gap: 12px; align-items: center; padding: 10px 0; color: var(--muted); }
+    .step.on { color: var(--text); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
+    .step.on .dot { background: var(--cyan); box-shadow: 0 0 12px rgba(6,182,212,.45); }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 4px; font-size: 12px; letter-spacing: .08em; }
+    .TRUE { color: var(--true); background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3); }
+    .FALSE { color: var(--false); background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); }
+    .MISLEADING, .PARTIALLY_TRUE { color: var(--amber); background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); }
+    .UNVERIFIABLE { color: var(--purple); background: rgba(139,92,246,.12); border: 1px solid rgba(139,92,246,.3); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--line); border-top: 1px solid rgba(255,255,255,.14); border-radius: 8px; padding: 14px; }
+    .kpi { background: var(--panel); border: 1px solid var(--line); padding: 16px; min-width: 160px; }
+    .kpi b { display: block; font-size: 22px; color: var(--bright); margin-top: 6px; }
+    .err { color: var(--false); margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    th { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+    .graph span { display: inline-block; margin: 4px 6px 0 0; padding: 4px 8px; background: var(--high); border-radius: 4px; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <section id="splash" class="splash">
+    <div>
+      <div class="lens">⊕</div>
+      <h1>TRUTH<span style="color:var(--cyan)">LENS</span></h1>
+      <p class="mono">AGENTIC FACT VERIFICATION SYSTEM</p>
+      <p class="mono ok">SYSTEM ONLINE // EVIDENCE ENGINE READY</p>
+    </div>
+  </section>
+
+  <header class="app" id="chrome" style="display:none">
+    <strong>TRUTH<span>LENS</span></strong>
+    <span class="mono" style="color:var(--cyan);font-size:10px">CORE V0.1</span>
+    <nav>
+      <a href="#home" data-nav="home" class="active">HOME / VERIFY</a>
+      <a href="#history" data-nav="history">HISTORY</a>
+      <a href="#analytics" data-nav="analytics">ANALYTICS</a>
+    </nav>
+  </header>
+
+  <section id="home" class="screen">
+    <div class="wrap" style="max-width:760px">
+      <div class="sec mono">SEC_01 // CLAIM INTAKE</div>
+      <h2>Verify a claim</h2>
+      <p style="color:var(--muted)">Submit a social, news, health, science, or political claim. TruthLens investigates; it does not chat. Without live search keys, only on-topic seed documents can appear as evidence.</p>
+      <textarea id="claim" placeholder="Enter the claim you want investigated"></textarea>
+      <div class="row">
+        <button class="btn mono" id="verify">VERIFY</button>
+        <label class="btn ghost mono">UPLOAD SCREENSHOT<input id="shot" type="file" accept="image/*" hidden /></label>
+      </div>
+      <div id="homeErr" class="err"></div>
+    </div>
+  </section>
+
+  <section id="processing" class="screen">
+    <div class="wrap">
+      <div class="sec mono">SEC_02 // LIVE INVESTIGATION</div>
+      <h2>Agent pipeline</h2>
+      <p id="processingClaim" class="mono" style="color:var(--cyan)"></p>
+      <div id="steps"></div>
+    </div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="wrap" id="resultBody"></div>
+  </section>
+
+  <section id="history" class="screen">
+    <div class="wrap">
+      <div class="sec mono">SEC_08 // AUDIT HISTORY</div>
+      <h2>Investigation ledger</h2>
+      <table><thead><tr><th class="mono">TIME</th><th>CLAIM</th><th>VERDICT</th><th class="mono">CONF</th><th class="mono">AGENTS</th></tr></thead><tbody id="histBody"></tbody></table>
+    </div>
+  </section>
+
+  <section id="analytics" class="screen">
+    <div class="wrap">
+      <div class="sec mono">SEC_09 // EVALUATION</div>
+      <h2>Observability</h2>
+      <div class="row" id="kpis"></div>
+      <div id="byVerdict" style="margin-top:24px"></div>
+    </div>
+  </section>
+
+  <script>
+    const API = "";
+    const STEPS = [
+      ["extracting_claim", "Extracting Claim..."],
+      ["searching_fact_databases", "Searching Fact Databases..."],
+      ["searching_evidence", "Searching Evidence..."],
+      ["building_knowledge_graph", "Building Knowledge Graph..."],
+      ["evaluating_sources", "Evaluating Sources..."],
+      ["generating_verdict", "Generating Verdict..."],
+    ];
+
+    function show(id) {
+      document.getElementById("splash").style.display = "none";
+      document.getElementById("chrome").style.display = "flex";
+      document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("active", a.dataset.nav === id));
+    }
+
+    setTimeout(() => show("home"), 1400);
+    document.getElementById("splash").addEventListener("click", () => show("home"));
+
+    document.querySelectorAll("nav a").forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        show(a.dataset.nav);
+        if (a.dataset.nav === "history") loadHistory();
+        if (a.dataset.nav === "analytics") loadAnalytics();
+      });
+    });
+
+    document.getElementById("verify").onclick = async () => {
+      const claim = document.getElementById("claim").value.trim();
+      document.getElementById("homeErr").textContent = "";
+      try {
+        const res = await fetch(API + "/v1/fact-checks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ claim }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+        startRun(data.fact_check_id, claim);
+      } catch (err) {
+        document.getElementById("homeErr").textContent = err.message;
+      }
+    };
+
+    document.getElementById("shot").onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch(API + "/v1/fact-checks/screenshot", { method: "POST", body: fd });
+      const data = await res.json();
+      startRun(data.fact_check_id, file.name);
+    };
+
+    let activeRun = null;
+    function startRun(id, claimText) {
+      activeRun = id;
+      document.getElementById("resultBody").innerHTML = "";
+      document.getElementById("processingClaim").textContent = "INVESTIGATING: " + (claimText || "");
+      show("processing");
+      const box = document.getElementById("steps");
+      box.innerHTML = STEPS.map(([k, label]) => `<div class="step" id="s-${k}"><div class="dot"></div><span class="mono">${label}</span></div>`).join("");
+      const es = new EventSource(API + "/v1/fact-checks/" + id + "/events");
+      let pollTimer = null;
+      let sealed = false;
+      const finish = async (ok) => {
+        if (sealed || activeRun !== id) return;
+        sealed = true;
+        try { es.close(); } catch (e) {}
+        if (pollTimer) clearInterval(pollTimer);
+        if (!ok) {
+          document.getElementById("homeErr").textContent = "Investigation failed.";
+          show("home");
+          return;
+        }
+        await renderResult(id);
+        show("result");
+      };
+      es.onmessage = () => {};
+      STEPS.forEach(([type]) => {
+        es.addEventListener(type, () => {
+          const el = document.getElementById("s-" + type);
+          if (el) el.classList.add("on");
+        });
+      });
+      es.addEventListener("completed", () => finish(true));
+      es.addEventListener("failed", () => finish(false));
+      pollTimer = setInterval(async () => {
+        if (activeRun !== id) return;
+        try {
+          const d = await (await fetch(API + "/v1/fact-checks/" + id)).json();
+          if (d.status === "completed") finish(true);
+          if (d.status === "failed") finish(false);
+        } catch (e) {}
+      }, 400);
+    }
+
+    async function renderResult(id) {
+      const d = await (await fetch(API + "/v1/fact-checks/" + id)).json();
+      const v = d.verdict || {};
+      const label = v.verdict || "UNVERIFIABLE";
+      const conf = ((v.confidence || 0) * 100).toFixed(1);
+      const reasoning = (v.reasoning || []).map((s) => `<div class="card"><div class="mono">${s.index} // ${s.title}</div><p>${s.detail}</p><div class="mono" style="color:var(--muted)">Refs ${ (s.evidence_ids||[]).join(", ") }</div></div>`).join("") || `<p style="color:var(--muted)">No on-topic reasoning ledger.</p>`;
+      const evidence = (d.evidence || []).map((e) => `<div class="card"><div class="mono">${e.id} · ${e.store} · ${e.stance}</div><strong>${e.title || ""}</strong><p>${e.text}</p><div class="mono" style="color:var(--muted)">${e.url} · ${e.domain}</div></div>`).join("") || `<p style="color:var(--muted)">No on-topic evidence in the current corpus. Verdict is UNVERIFIABLE rather than borrowing unrelated documents.</p>`;
+      const sources = (d.sources || []).map((s) => `<div class="mono">${s.tier} ${s.score} · ${s.url}</div>`).join("") || `<p style="color:var(--muted)">No on-topic sources.</p>`;
+      const nodes = ((d.knowledge_graph || {}).nodes || []).map((n) => `<span class="mono">${n.type}: ${n.label}</span>`).join("");
+      document.getElementById("resultBody").innerHTML = `
+        <div class="sec mono">SEC_03 // FORENSIC DOSSIER // ${id}</div>
+        <h2>“${d.original_input}”</h2>
+        <div class="row"><span class="badge mono ${label}">VERDICT: ${label}</span><span class="mono" style="color:var(--bright)">${conf}% CONFIDENCE</span></div>
+        <p>${v.explanation || ""}</p>
+        <div class="sec mono">SEC_04 // REASONING</div>
+        <div class="grid">${reasoning}</div>
+        <div class="sec mono" style="margin-top:24px">SEC_05 // EVIDENCE</div>
+        <div class="grid">${evidence}</div>
+        <div class="sec mono" style="margin-top:24px">SEC_06 // SOURCES</div>
+        ${sources}
+        <div class="sec mono" style="margin-top:24px">SEC_07 // ENTITY GRAPH</div>
+        <div class="graph">${nodes}</div>`;
+    }
+
+    async function loadHistory() {
+      const rows = await (await fetch(API + "/v1/fact-checks")).json();
+      document.getElementById("histBody").innerHTML = rows.map((r) => `
+        <tr style="cursor:pointer" onclick="renderResult('${r.id}').then(()=>show('result'))">
+          <td class="mono">${r.created_at || ""}</td>
+          <td>${r.original_input}</td>
+          <td class="mono ${r.verdict || ""}">${r.verdict || "—"}</td>
+          <td class="mono">${((r.confidence || 0)*100).toFixed(0)}%</td>
+          <td class="mono">${r.agent_success}</td>
+        </tr>`).join("") || `<tr><td colspan="5" style="color:var(--muted)">No sealed dossiers yet.</td></tr>`;
+    }
+
+    async function loadAnalytics() {
+      const a = await (await fetch(API + "/v1/analytics/summary")).json();
+      document.getElementById("kpis").innerHTML = [
+        ["TOTAL RUNS", a.total],
+        ["AVG CONFIDENCE", (a.avg_confidence || 0).toFixed(3)],
+        ["AGENT SUCCESS", (a.agent_success_rate || 0).toFixed(3)],
+        ["SOURCE DIVERSITY", a.source_diversity],
+        ["VERDICT CONSISTENCY", (a.verdict_consistency || 0).toFixed(3)],
+      ].map(([k,v]) => `<div class="kpi"><div class="mono" style="color:var(--muted);font-size:10px">${k}</div><b class="mono">${v}</b></div>`).join("");
+      document.getElementById("byVerdict").innerHTML = Object.entries(a.by_verdict || {}).map(([k,v]) => `<div class="mono ${k}">${k}: ${v}</div>`).join("");
+    }
+  </script>
+</body>
+</html>
